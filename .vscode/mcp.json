@@ -8,10 +8,10 @@
     }
   ],
   "servers": {
-    "Perplexity": {
+    "PerplexityAdvanced": {
       "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "server-perplexity-ask"],
+      "command": "uvx",
+      "args": ["perplexity-advanced-mcp"],
       "env": {
         "PERPLEXITY_API_KEY": "${input:perplexity-key}"
       }

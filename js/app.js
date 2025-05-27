@@ -1,32 +1,14 @@
+import Fish from './Fish.js';
+
 const app = new PIXI.Application();
 let fishes = [];
 
-class Fish {
-  constructor(x, y) {
-    this.sprite = PIXI.Sprite.from('img/fish.png');
-    this.sprite.anchor.set(0.5);
-    this.sprite.x = x;
-    this.sprite.y = y;
-    this.sprite.width = 14;
-    this.sprite.heigth = 14;
-    this.velocity = new Victor(Math.random() - 0.5, Math.random() - 0.5).normalize().multiplyScalar(2);
-    app.stage.addChild(this.sprite);
-  }
-
-  update() {
-    this.sprite.x += this.velocity.x;
-    this.sprite.y += this.velocity.y;
-    this.wrapAround();
-    this.sprite.rotation = Math.atan2(this.velocity.y, this.velocity.x) - Math.PI / 2;
-  }
-
-  wrapAround() {
-    if (this.sprite.x < 0) this.sprite.x = app.screen.width;
-    if (this.sprite.x > app.screen.width) this.sprite.x = 0;
-    if (this.sprite.y < 0) this.sprite.y = app.screen.height;
-    if (this.sprite.y > app.screen.height) this.sprite.y = 0;
-  }
-}
+// Constants
+const FISH_COUNT = 5;
+const FLOCK_DISTANCE = 20;
+const ALIGN_ANGLE_DEG = 90;
+const FISH_SPEED = 2;
+const ROTATE_RAD = Math.PI / 6;
 
 async function setup() {
   await app.init({
@@ -34,58 +16,59 @@ async function setup() {
     resizeTo: window,
   });
   document.getElementById('container').appendChild(app.canvas);
-  await PIXI.Assets.load('img/fish.png');
+  try {
+    await PIXI.Assets.load('img/fish.png');
+  } catch (error) {
+    console.error('Failed to load fish image:', error);
+    return;
+  }
 
-  // Initialize the fish app
   initFishApp();
 
-  // Add 5 fishes with random positions and directions on first load
-  for (let i = 0; i < 5; i++) {
+  // Add FISH_COUNT fishes with random positions and directions on first load
+  for (let i = 0; i < FISH_COUNT; i++) {
     const x = Math.random() * app.screen.width;
     const y = Math.random() * app.screen.height;
-    const fish = new Fish(x, y);
+    const fish = new Fish(app, x, y, Victor);
     fishes.push(fish);
   }
 
-  // Start the animation loop
-  app.ticker.add(update)
+  app.ticker.add(update);
 }
 
 function initFishApp() {
-  // Add fish on click
   app.canvas.addEventListener('click', (event) => {
-    console.log({ event });
-    const fish = new Fish(event.clientX, event.clientY);
+    const rect = app.canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    const fish = new Fish(app, x, y, Victor);
     fishes.push(fish);
   });
 }
 
-// Update function
 function update() {
   for (const fish of fishes) {
-    fish.update();
+    fish.update(app);
   }
   flockBehavior();
-
 }
 
-// Flocking behavior
 function flockBehavior() {
-  for (const fish1 of fishes) {
-    for (const fish2 of fishes) {
-      if (fish1 !== fish2) {
-        const distance = new Victor(fish1.sprite.x - fish2.sprite.x, fish1.sprite.y - fish2.sprite.y).length();
-        if (distance < 20) {
-          const angle = Math.abs(fish1.velocity.angleDeg() - fish2.velocity.angleDeg());
-          if (angle < 90) {
-            // Align trajectories
-            fish1.velocity.add(fish2.velocity).normalize().multiplyScalar(2);
-            fish2.velocity.add(fish1.velocity).normalize().multiplyScalar(2);
-          } else {
-            // Impact directions
-            fish1.velocity.rotate(Math.PI / 6);
-            fish2.velocity.rotate(-Math.PI / 6);
-          }
+  for (let i = 0; i < fishes.length; i++) {
+    for (let j = i + 1; j < fishes.length; j++) {
+      const fish1 = fishes[i];
+      const fish2 = fishes[j];
+      const distance = new Victor(fish1.sprite.x - fish2.sprite.x, fish1.sprite.y - fish2.sprite.y).length();
+      if (distance < FLOCK_DISTANCE) {
+        const angle = Math.abs(fish1.velocity.angleDeg() - fish2.velocity.angleDeg());
+        if (angle < ALIGN_ANGLE_DEG) {
+          // Align trajectories
+          fish1.velocity.add(fish2.velocity).normalize().multiplyScalar(FISH_SPEED);
+          fish2.velocity.add(fish1.velocity).normalize().multiplyScalar(FISH_SPEED);
+        } else {
+          // Impact directions
+          fish1.velocity.rotate(ROTATE_RAD);
+          fish2.velocity.rotate(-ROTATE_RAD);
         }
       }
     }
