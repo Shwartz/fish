@@ -1,9 +1,7 @@
 const app = new PIXI.Application();
 let fishes = [];
 
-
 async function setup() {
-  let elapsedTime = 0.0;
   await app.init({
     background: '#1099bb',
     resizeTo: window,
@@ -15,27 +13,18 @@ async function setup() {
   initFishApp();
 
   // Start the animation loop
-  app.ticker.add((ticker) => {
-    elapsedTime += ticker.deltaTime;
-    update();
-  });
-
-  // test if img src is correct
-  const elSpan = document.getElementsByTagName('span')[0];
-  const elImg = document.createElement('img')
-  elImg.setAttribute('src', `img/fish.png`);
-  elSpan.appendChild(elImg);
+  app.ticker.add(update)
 }
 
 function initFishApp() {
-  //const fishTexture = PIXI.Texture.from('/img/fish.png');
-  //console.log('fishTexture: ', fishTexture)
   class Fish {
     constructor(x, y) {
       this.sprite = PIXI.Sprite.from('img/fish.png');
       this.sprite.anchor.set(0.5);
       this.sprite.x = x;
       this.sprite.y = y;
+      this.sprite.width = 14;
+      this.sprite.heigth = 14;
       this.velocity = new Victor(Math.random() - 0.5, Math.random() - 0.5).normalize().multiplyScalar(2);
       app.stage.addChild(this.sprite);
     }
@@ -44,7 +33,7 @@ function initFishApp() {
       this.sprite.x += this.velocity.x;
       this.sprite.y += this.velocity.y;
       this.wrapAround();
-      this.sprite.rotation = Math.atan2(this.velocity.y, this.velocity.x);
+      this.sprite.rotation = Math.atan2(this.velocity.y, this.velocity.x) - Math.PI / 2;
     }
 
     wrapAround() {
