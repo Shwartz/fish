@@ -1,6 +1,33 @@
 const app = new PIXI.Application();
 let fishes = [];
 
+class Fish {
+  constructor(x, y) {
+    this.sprite = PIXI.Sprite.from('img/fish.png');
+    this.sprite.anchor.set(0.5);
+    this.sprite.x = x;
+    this.sprite.y = y;
+    this.sprite.width = 14;
+    this.sprite.heigth = 14;
+    this.velocity = new Victor(Math.random() - 0.5, Math.random() - 0.5).normalize().multiplyScalar(2);
+    app.stage.addChild(this.sprite);
+  }
+
+  update() {
+    this.sprite.x += this.velocity.x;
+    this.sprite.y += this.velocity.y;
+    this.wrapAround();
+    this.sprite.rotation = Math.atan2(this.velocity.y, this.velocity.x) - Math.PI / 2;
+  }
+
+  wrapAround() {
+    if (this.sprite.x < 0) this.sprite.x = app.screen.width;
+    if (this.sprite.x > app.screen.width) this.sprite.x = 0;
+    if (this.sprite.y < 0) this.sprite.y = app.screen.height;
+    if (this.sprite.y > app.screen.height) this.sprite.y = 0;
+  }
+}
+
 async function setup() {
   await app.init({
     background: '#1099bb',
@@ -12,41 +39,22 @@ async function setup() {
   // Initialize the fish app
   initFishApp();
 
+  // Add 5 fishes with random positions and directions on first load
+  for (let i = 0; i < 5; i++) {
+    const x = Math.random() * app.screen.width;
+    const y = Math.random() * app.screen.height;
+    const fish = new Fish(x, y);
+    fishes.push(fish);
+  }
+
   // Start the animation loop
   app.ticker.add(update)
 }
 
 function initFishApp() {
-  class Fish {
-    constructor(x, y) {
-      this.sprite = PIXI.Sprite.from('img/fish.png');
-      this.sprite.anchor.set(0.5);
-      this.sprite.x = x;
-      this.sprite.y = y;
-      this.sprite.width = 14;
-      this.sprite.heigth = 14;
-      this.velocity = new Victor(Math.random() - 0.5, Math.random() - 0.5).normalize().multiplyScalar(2);
-      app.stage.addChild(this.sprite);
-    }
-
-    update() {
-      this.sprite.x += this.velocity.x;
-      this.sprite.y += this.velocity.y;
-      this.wrapAround();
-      this.sprite.rotation = Math.atan2(this.velocity.y, this.velocity.x) - Math.PI / 2;
-    }
-
-    wrapAround() {
-      if (this.sprite.x < 0) this.sprite.x = app.screen.width;
-      if (this.sprite.x > app.screen.width) this.sprite.x = 0;
-      if (this.sprite.y < 0) this.sprite.y = app.screen.height;
-      if (this.sprite.y > app.screen.height) this.sprite.y = 0;
-    }
-  }
-
   // Add fish on click
   app.canvas.addEventListener('click', (event) => {
-    console.log({event});
+    console.log({ event });
     const fish = new Fish(event.clientX, event.clientY);
     fishes.push(fish);
   });
